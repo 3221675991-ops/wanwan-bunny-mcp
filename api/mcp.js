@@ -36,8 +36,11 @@ const stickers = [
 const stickerIds = stickers.map(s=>s.id);
 
 
-const choose = (id)=>
-  stickers.find(s=>s.id===id);
+function choose(id){
+  return stickers.find(
+    s=>s.id===id
+  );
+}
 
 
 
@@ -55,8 +58,8 @@ async function imageResult(sticker,req){
 
 
   const host =
-    req.headers['x-forwarded-host'] ||
-    req.headers.host;
+    req.headers['x-forwarded-host']
+    || req.headers.host;
 
 
   const origin =
@@ -66,20 +69,18 @@ async function imageResult(sticker,req){
   return {
 
     content:[
-
       {
         type:'text',
         text:
-        `${sticker.label}兔兔。图片链接：${origin}/stickers/${sticker.filename}`
+        `${sticker.label}兔兔`
       },
-
 
       {
         type:'image',
-        data:bytes.toString('base64'),
+        data:
+        bytes.toString('base64'),
         mimeType:'image/png'
       }
-
     ]
 
   };
@@ -89,48 +90,39 @@ async function imageResult(sticker,req){
 
 
 
-
 function makeServer(req){
-
 
   const server =
     new McpServer({
-
       name:'wanwan-bunny-stickers',
-
       version:'1.0.0'
-
     });
 
 
 
-
-
   server.tool(
-
     'list_stickers',
-
-    '列出晚晚和哥哥的20张兔兔表情包。',
-
+    '列出晚晚和哥哥的兔兔表情包。',
     {},
-
 
     async()=>({
 
-      content:[{
-
-        type:'text',
-
-        text:
-        JSON.stringify(
-          stickers.map(
-            ({id,label})=>({id,label})
-          ),
-          null,
-          2
-        )
-
-      }]
+      content:[
+        {
+          type:'text',
+          text:
+          JSON.stringify(
+            stickers.map(
+              ({id,label})=>({
+                id,
+                label
+              })
+            ),
+            null,
+            2
+          )
+        }
+      ]
 
     })
 
@@ -148,28 +140,22 @@ function makeServer(req){
 
     {
 
-      id:z.enum(stickerIds)
-
-      .describe(
-        '兔兔表情ID，例如 hug、mua、miss_you'
-      )
+      id:
+      z.enum(stickerIds)
 
     },
 
 
     async({id})=>{
 
-
       const sticker =
-        choose(id);
+      choose(id);
 
 
       if(!sticker){
-
         throw new Error(
           'Sticker not found'
         );
-
       }
 
 
@@ -187,7 +173,6 @@ function makeServer(req){
 
 
 
-
   server.tool(
 
     'suggest_sticker',
@@ -196,8 +181,8 @@ function makeServer(req){
 
     {
 
-      mood:z.enum([
-
+      mood:
+      z.enum([
         'affection',
         'comfort',
         'missing',
@@ -206,7 +191,6 @@ function makeServer(req){
         'care',
         'playful',
         'sad'
-
       ])
 
     },
@@ -215,33 +199,23 @@ function makeServer(req){
     async({mood})=>{
 
 
-      const mapping={
+      const map={
 
         affection:'mua',
-
         comfort:'hug',
-
         missing:'miss_you',
-
         sleep:'good_night',
-
         morning:'wake_up',
-
         care:'take_care',
-
         playful:'like_you',
-
         sad:'comfort_me'
 
       };
 
 
       return imageResult(
-
-        choose(mapping[mood]),
-
+        choose(map[mood]),
         req
-
       );
 
     }
@@ -260,7 +234,6 @@ function makeServer(req){
 
 
 export default async function handler(req,res){
-
 
 
   res.setHeader(
@@ -282,11 +255,9 @@ export default async function handler(req,res){
 
 
 
-
   if(req.method==='OPTIONS'){
 
     res.statusCode=204;
-
     return res.end();
 
   }
@@ -294,17 +265,9 @@ export default async function handler(req,res){
 
 
 
-
-  if(
-    ![
-      'GET',
-      'POST',
-      'DELETE'
-    ].includes(req.method)
-  ){
+  if(!['GET','POST','DELETE'].includes(req.method)){
 
     res.statusCode=405;
-
     return res.end(
       'Method Not Allowed'
     );
@@ -313,28 +276,8 @@ export default async function handler(req,res){
 
 
 
-
-
-
-  // MCP握手需要SSE
-
-  if(req.method==='GET'){
-
-    res.setHeader(
-      'Content-Type',
-      'text/event-stream'
-    );
-
-  }
-
-
-
-
-
-
   const server =
     makeServer(req);
-
 
 
 
@@ -348,7 +291,6 @@ export default async function handler(req,res){
 
 
 
-
   try{
 
 
@@ -358,15 +300,10 @@ export default async function handler(req,res){
 
 
     await transport.handleRequest(
-
       req,
-
       res,
-
       req.body
-
     );
-
 
 
   }catch(error){
@@ -375,9 +312,7 @@ export default async function handler(req,res){
     console.error(error);
 
 
-
     if(!res.headersSent){
-
 
       res.statusCode=500;
 
@@ -389,20 +324,13 @@ export default async function handler(req,res){
 
 
       res.end(
-
         JSON.stringify({
-
           error:'MCP request failed'
-
         })
-
       );
 
     }
 
-
   }
-
-
 
 }
