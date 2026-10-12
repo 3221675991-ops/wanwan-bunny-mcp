@@ -27,19 +27,20 @@ const stickers = [
 ].map(([id,label],i)=>({
   id,
   label,
-  filename:`${String(i+1).padStart(2,'0')}_${id}.png`
+  filename:`${String(i + 1).padStart(2,'0')}_${id}.png`
 }));
 
 
-const stickerIds =
-  stickers.map(s=>s.id);
+const stickerIds = stickers.map(
+  s => s.id
+);
 
 
 
 function choose(id){
 
   return stickers.find(
-    s=>s.id===id
+    s => s.id === id
   );
 
 }
@@ -58,6 +59,10 @@ function getImageUrl(sticker){
 
 function imageResult(sticker){
 
+  const url =
+    getImageUrl(sticker);
+
+
   return {
 
     content:[
@@ -67,11 +72,12 @@ function imageResult(sticker){
         text:`${sticker.label}兔兔`
       },
 
+
       {
-        type:'image_url',
-        image_url:{
-          url:getImageUrl(sticker)
-        }
+        type:'resource_link',
+        name:sticker.label,
+        uri:url,
+        mimeType:'image/png'
       }
 
     ]
@@ -79,7 +85,6 @@ function imageResult(sticker){
   };
 
 }
-
 
 
 
@@ -92,10 +97,9 @@ function makeServer(){
 
       name:'wanwan-bunny-stickers',
 
-      version:'4.0.0'
+      version:'5.0.0'
 
     });
-
 
 
 
@@ -135,7 +139,6 @@ function makeServer(){
 
 
 
-
   server.tool(
 
     'show_sticker',
@@ -169,12 +172,9 @@ function makeServer(){
         sticker
       );
 
-
     }
 
   );
-
-
 
 
 
@@ -261,9 +261,9 @@ export default async function handler(req,res){
 
 
 
-  if(req.method==='OPTIONS'){
+  if(req.method === 'OPTIONS'){
 
-    res.statusCode=204;
+    res.statusCode = 204;
 
     return res.end();
 
@@ -271,10 +271,9 @@ export default async function handler(req,res){
 
 
 
-
   if(!['GET','POST','DELETE'].includes(req.method)){
 
-    res.statusCode=405;
+    res.statusCode = 405;
 
     return res.end(
       'Method Not Allowed'
@@ -310,6 +309,5 @@ export default async function handler(req,res){
     res,
     req.body
   );
-
 
 }
