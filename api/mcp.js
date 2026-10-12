@@ -1,8 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 
 
 const stickers = [
@@ -48,50 +46,32 @@ function choose(id){
 
 
 
-async function getImageBase64(sticker){
+function getImageUrl(sticker){
 
-  const file =
-    path.join(
-      process.cwd(),
-      'public',
-      'stickers',
-      sticker.filename
-    );
-
-
-  const bytes =
-    await readFile(file);
-
-
-  return bytes.toString('base64');
+  return (
+    `https://cdn.jsdelivr.net/gh/3221675991-ops/wanwan-bunny-mcp@main/public/stickers/${sticker.filename}`
+  );
 
 }
 
 
 
-
-
-async function imageResult(sticker){
-
-  const base64 =
-    await getImageBase64(sticker);
-
+function imageResult(sticker){
 
   return {
 
     content:[
 
       {
-        type:'image',
-        data:base64,
-        mimeType:'image/png'
+        type:'text',
+        text:`${sticker.label}兔兔`
       },
 
-
       {
-        type:'text',
-        text:
-        `${sticker.label}兔兔`
+        type:'image_url',
+        image_url:{
+          url:getImageUrl(sticker)
+        }
       }
 
     ]
@@ -106,14 +86,16 @@ async function imageResult(sticker){
 
 function makeServer(){
 
+
   const server =
     new McpServer({
 
       name:'wanwan-bunny-stickers',
 
-      version:'3.0.0'
+      version:'4.0.0'
 
     });
+
 
 
 
@@ -121,7 +103,7 @@ function makeServer(){
 
     'list_stickers',
 
-    '列出兔兔表情包。',
+    '列出晚晚和哥哥的兔兔表情包。',
 
     {},
 
@@ -153,6 +135,7 @@ function makeServer(){
 
 
 
+
   server.tool(
 
     'show_sticker',
@@ -167,6 +150,7 @@ function makeServer(){
 
 
     async({id})=>{
+
 
       const sticker =
         choose(id);
@@ -185,9 +169,12 @@ function makeServer(){
         sticker
       );
 
+
     }
 
   );
+
+
 
 
 
@@ -197,7 +184,7 @@ function makeServer(){
 
     'suggest_sticker',
 
-    '根据情绪推荐兔兔表情包。',
+    '根据聊天情绪推荐兔兔表情包。',
 
     {
 
@@ -284,6 +271,20 @@ export default async function handler(req,res){
 
 
 
+
+  if(!['GET','POST','DELETE'].includes(req.method)){
+
+    res.statusCode=405;
+
+    return res.end(
+      'Method Not Allowed'
+    );
+
+  }
+
+
+
+
   const server =
     makeServer();
 
@@ -303,10 +304,12 @@ export default async function handler(req,res){
   );
 
 
+
   await transport.handleRequest(
     req,
     res,
     req.body
   );
+
 
 }
