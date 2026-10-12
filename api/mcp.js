@@ -30,14 +30,15 @@ const stickers = [
 ].map(([id, label], i) => ({
   id,
   label,
-  filename: `${String(i + 1).padStart(2, '0')}_${id}.png`
+  filename: `${String(i + 1).padStart(2,'0')}_${id}.png`
 }));
 
 
 const stickerIds = stickers.map(s => s.id);
 
 
-const choose = (id) => stickers.find(s => s.id === id);
+const choose = (id) =>
+  stickers.find(s => s.id === id);
 
 
 
@@ -52,6 +53,7 @@ async function imageResult(sticker, req) {
 
   const bytes = await readFile(file);
 
+
   const origin =
     `https://${req.headers['x-forwarded-host'] || req.headers.host}`;
 
@@ -59,13 +61,13 @@ async function imageResult(sticker, req) {
   return {
     content: [
       {
-        type: 'text',
-        text: `${sticker.label}兔兔。图片链接：${origin}/stickers/${sticker.filename}`
+        type:'text',
+        text:`${sticker.label}兔兔。图片链接：${origin}/stickers/${sticker.filename}`
       },
       {
-        type: 'image',
-        data: bytes.toString('base64'),
-        mimeType: 'image/png'
+        type:'image',
+        data:bytes.toString('base64'),
+        mimeType:'image/png'
       }
     ]
   };
@@ -73,25 +75,26 @@ async function imageResult(sticker, req) {
 
 
 
+
 function makeServer(req) {
 
   const server = new McpServer({
-    name: 'wanwan-bunny-stickers',
-    version: '1.0.0'
+    name:'wanwan-bunny-stickers',
+    version:'1.0.0'
   });
 
 
 
   server.tool(
     'list_stickers',
-    '列出晚晚和哥哥的20张兔兔表情包，包含情绪和场景名称。',
+    '列出晚晚和哥哥的20张兔兔表情包。',
     {},
     async () => ({
-      content: [
+      content:[
         {
-          type: 'text',
-          text: JSON.stringify(
-            stickers.map(({id,label}) => ({
+          type:'text',
+          text:JSON.stringify(
+            stickers.map(({id,label})=>({
               id,
               label
             })),
@@ -105,32 +108,36 @@ function makeServer(req) {
 
 
 
+
   server.tool(
     'show_sticker',
-    '展示一张兔兔表情包图片。',
+    '展示指定兔兔表情包图片。',
     {
-      id: z.enum(stickerIds)
-        .describe('表情包ID，例如 hug、mua、miss_you')
+      id:z.enum(stickerIds)
+        .describe('兔兔表情包ID，例如 hug、mua、miss_you')
     },
-    async ({id}) => {
+
+    async ({id})=>{
 
       const sticker = choose(id);
 
-      if (!sticker) {
+      if(!sticker){
         throw new Error('Sticker not found');
       }
 
-      return imageResult(sticker, req);
+      return imageResult(sticker,req);
     }
   );
 
 
 
+
+
   server.tool(
     'suggest_sticker',
-    '根据聊天情绪推荐合适的兔兔表情包。',
+    '根据聊天情绪推荐兔兔表情包。',
     {
-      mood: z.enum([
+      mood:z.enum([
         'affection',
         'comfort',
         'missing',
@@ -140,12 +147,13 @@ function makeServer(req) {
         'playful',
         'sad'
       ])
-      .describe('聊天情绪')
     },
 
-    async ({mood}) => {
+
+    async ({mood})=>{
 
       const mapping = {
+
         affection:'mua',
         comfort:'hug',
         missing:'miss_you',
@@ -154,6 +162,7 @@ function makeServer(req) {
         care:'take_care',
         playful:'like_you',
         sad:'comfort_me'
+
       };
 
 
@@ -161,17 +170,20 @@ function makeServer(req) {
         choose(mapping[mood]),
         req
       );
+
     }
   );
 
 
   return server;
+
 }
 
 
 
 
-export default async function handler(req, res) {
+
+export default async function handler(req,res){
 
 
   res.setHeader(
@@ -179,20 +191,21 @@ export default async function handler(req, res) {
     '*'
   );
 
+
   res.setHeader(
     'Access-Control-Allow-Methods',
-    'GET, POST, DELETE, OPTIONS'
+    'GET, POST, DELETE, OPTIONS, HEAD'
   );
 
 
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version, Authorization'
+    'Content-Type, Accept, MCP-Session-Id, MCP-Protocol-Version, Authorization'
   );
 
 
 
-  if (req.method === 'OPTIONS') {
+  if(req.method === 'OPTIONS'){
 
     res.statusCode = 204;
     return res.end();
@@ -201,12 +214,14 @@ export default async function handler(req, res) {
 
 
 
-  if (!['GET','POST','DELETE'].includes(req.method)) {
+
+  if(!['GET','POST','DELETE','HEAD'].includes(req.method)){
 
     res.statusCode = 405;
     return res.end('Method Not Allowed');
 
   }
+
 
 
 
@@ -217,13 +232,15 @@ export default async function handler(req, res) {
 
   const transport =
     new StreamableHTTPServerTransport({
-      sessionIdGenerator: () =>
-        crypto.randomUUID()
+
+      sessionIdGenerator:()=>crypto.randomUUID()
+
     });
 
 
 
-  try {
+
+  try{
 
 
     await server.connect(transport);
@@ -236,13 +253,14 @@ export default async function handler(req, res) {
     );
 
 
-  } catch(error) {
+
+  }catch(error){
 
 
     console.error(error);
 
 
-    if (!res.headersSent) {
+    if(!res.headersSent){
 
       res.statusCode = 500;
 
@@ -261,12 +279,12 @@ export default async function handler(req, res) {
     }
 
 
-  } finally {
+  }finally{
 
 
     res.on(
       'close',
-      () => {
+      ()=>{
 
         transport.close()
           .catch(()=>{});
@@ -277,6 +295,7 @@ export default async function handler(req, res) {
 
       }
     );
+
 
   }
 
