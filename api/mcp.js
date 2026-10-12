@@ -1,6 +1,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 
 
 const stickers = [
@@ -31,37 +33,42 @@ const stickers = [
 }));
 
 
-const stickerIds = stickers.map(s=>s.id);
+const stickerIds = stickers.map(
+  s => s.id
+);
 
 
 function choose(id){
+
   return stickers.find(
-    s=>s.id===id
+    s => s.id === id
   );
+
 }
 
 
 
-function getImageUrl(sticker,req){
+async function imageResult(sticker, req){
+
+  const file = path.join(
+    process.cwd(),
+    'public',
+    'stickers',
+    sticker.filename
+  );
+
+
+  const bytes = await readFile(file);
+
 
   const host =
-    process.env.VERCEL_URL ||
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ||
     req.headers['x-forwarded-host'] ||
     req.headers.host;
 
 
-  return `https://${host}/stickers/${sticker.filename}`;
-
-}
-
-
-
-function imageResult(sticker,req){
-
-  const url = getImageUrl(
-    sticker,
-    req
-  );
+  const imageUrl =
+    `https://${host}/stickers/${sticker.filename}`;
 
 
   return {
@@ -69,15 +76,16 @@ function imageResult(sticker,req){
     content:[
 
       {
-        type:'text',
-        text:`${sticker.label}兔兔`
+        type:'image',
+        data:bytes.toString('base64'),
+        mimeType:'image/png'
       },
 
 
       {
-        type:'image',
-        data:url,
-        mimeType:'image/png'
+        type:'text',
+        text:
+        `${sticker.label}兔兔\n${imageUrl}`
       }
 
     ]
@@ -89,6 +97,7 @@ function imageResult(sticker,req){
 
 
 
+
 function makeServer(req){
 
   const server =
@@ -96,7 +105,7 @@ function makeServer(req){
 
       name:'wanwan-bunny-stickers',
 
-      version:'1.3.0'
+      version:'1.7.0'
 
     });
 
@@ -142,12 +151,10 @@ function makeServer(req){
 
     'show_sticker',
 
-    '展示指定兔兔表情包。',
+    '展示兔兔表情包。',
 
     {
-
       id:z.enum(stickerIds)
-
     },
 
 
@@ -206,7 +213,7 @@ function makeServer(req){
     async({mood})=>{
 
 
-      const map={
+      const map = {
 
         affection:'mua',
         comfort:'hug',
@@ -225,16 +232,15 @@ function makeServer(req){
         req
       );
 
-
     }
 
   );
 
 
-
   return server;
 
 }
+
 
 
 
@@ -262,9 +268,9 @@ export default async function handler(req,res){
 
 
 
-  if(req.method==='OPTIONS'){
+  if(req.method === 'OPTIONS'){
 
-    res.statusCode=204;
+    res.statusCode = 204;
 
     return res.end();
 
@@ -272,15 +278,17 @@ export default async function handler(req,res){
 
 
 
+
   if(!['GET','POST','DELETE'].includes(req.method)){
 
-    res.statusCode=405;
+    res.statusCode = 405;
 
     return res.end(
       'Method Not Allowed'
     );
 
   }
+
 
 
 
@@ -295,6 +303,7 @@ export default async function handler(req,res){
       sessionIdGenerator:undefined
 
     });
+
 
 
 
@@ -321,7 +330,7 @@ export default async function handler(req,res){
 
     if(!res.headersSent){
 
-      res.statusCode=500;
+      res.statusCode = 500;
 
 
       res.setHeader(
