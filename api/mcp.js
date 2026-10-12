@@ -3,7 +3,6 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { z } from 'zod';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import crypto from 'node:crypto';
 
 
 const stickers = [
@@ -27,22 +26,22 @@ const stickers = [
   ['sleepy','困困'],
   ['good_night','晚安'],
   ['love_you','爱你']
-].map(([id, label], i) => ({
+].map(([id,label],i)=>({
   id,
   label,
-  filename: `${String(i + 1).padStart(2,'0')}_${id}.png`
+  filename:`${String(i+1).padStart(2,'0')}_${id}.png`
 }));
 
 
-const stickerIds = stickers.map(s => s.id);
+const stickerIds = stickers.map(s=>s.id);
 
 
-const choose = (id) =>
-  stickers.find(s => s.id === id);
+const choose = (id)=>
+  stickers.find(s=>s.id===id);
 
 
 
-async function imageResult(sticker, req) {
+async function imageResult(sticker,req){
 
   const file = path.join(
     process.cwd(),
@@ -51,93 +50,154 @@ async function imageResult(sticker, req) {
     sticker.filename
   );
 
+
   const bytes = await readFile(file);
 
 
+  const host =
+    req.headers['x-forwarded-host'] ||
+    req.headers.host;
+
+
   const origin =
-    `https://${req.headers['x-forwarded-host'] || req.headers.host}`;
+    `https://${host}`;
 
 
   return {
-    content: [
+
+    content:[
+
       {
         type:'text',
-        text:`${sticker.label}兔兔。图片链接：${origin}/stickers/${sticker.filename}`
+        text:
+        `${sticker.label}兔兔。图片链接：${origin}/stickers/${sticker.filename}`
       },
+
+
       {
         type:'image',
         data:bytes.toString('base64'),
         mimeType:'image/png'
       }
+
     ]
+
   };
+
 }
 
 
 
 
-function makeServer(req) {
 
-  const server = new McpServer({
-    name:'wanwan-bunny-stickers',
-    version:'1.0.0'
-  });
+function makeServer(req){
+
+
+  const server =
+    new McpServer({
+
+      name:'wanwan-bunny-stickers',
+
+      version:'1.0.0'
+
+    });
+
+
 
 
 
   server.tool(
+
     'list_stickers',
+
     '列出晚晚和哥哥的20张兔兔表情包。',
+
     {},
-    async () => ({
-      content:[
-        {
-          type:'text',
-          text:JSON.stringify(
-            stickers.map(({id,label})=>({
-              id,
-              label
-            })),
-            null,
-            2
-          )
-        }
-      ]
+
+
+    async()=>({
+
+      content:[{
+
+        type:'text',
+
+        text:
+        JSON.stringify(
+          stickers.map(
+            ({id,label})=>({id,label})
+          ),
+          null,
+          2
+        )
+
+      }]
+
     })
+
   );
 
 
 
 
+
   server.tool(
+
     'show_sticker',
-    '展示指定兔兔表情包图片。',
+
+    '展示兔兔表情包。',
+
     {
+
       id:z.enum(stickerIds)
-        .describe('兔兔表情包ID，例如 hug、mua、miss_you')
+
+      .describe(
+        '兔兔表情ID，例如 hug、mua、miss_you'
+      )
+
     },
 
-    async ({id})=>{
 
-      const sticker = choose(id);
+    async({id})=>{
+
+
+      const sticker =
+        choose(id);
+
 
       if(!sticker){
-        throw new Error('Sticker not found');
+
+        throw new Error(
+          'Sticker not found'
+        );
+
       }
 
-      return imageResult(sticker,req);
+
+      return imageResult(
+        sticker,
+        req
+      );
+
     }
+
   );
 
 
 
 
 
+
+
   server.tool(
+
     'suggest_sticker',
+
     '根据聊天情绪推荐兔兔表情包。',
+
     {
+
       mood:z.enum([
+
         'affection',
         'comfort',
         'missing',
@@ -146,33 +206,48 @@ function makeServer(req) {
         'care',
         'playful',
         'sad'
+
       ])
+
     },
 
 
-    async ({mood})=>{
+    async({mood})=>{
 
-      const mapping = {
+
+      const mapping={
 
         affection:'mua',
+
         comfort:'hug',
+
         missing:'miss_you',
+
         sleep:'good_night',
+
         morning:'wake_up',
+
         care:'take_care',
+
         playful:'like_you',
+
         sad:'comfort_me'
 
       };
 
 
       return imageResult(
+
         choose(mapping[mood]),
+
         req
+
       );
 
     }
+
   );
+
 
 
   return server;
@@ -183,7 +258,9 @@ function makeServer(req) {
 
 
 
+
 export default async function handler(req,res){
+
 
 
   res.setHeader(
@@ -194,20 +271,22 @@ export default async function handler(req,res){
 
   res.setHeader(
     'Access-Control-Allow-Methods',
-    'GET, POST, DELETE, OPTIONS, HEAD'
+    'GET, POST, DELETE, OPTIONS'
   );
 
 
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'Content-Type, Accept, MCP-Session-Id, MCP-Protocol-Version, Authorization'
+    'Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version, Authorization'
   );
 
 
 
-  if(req.method === 'OPTIONS'){
 
-    res.statusCode = 204;
+  if(req.method==='OPTIONS'){
+
+    res.statusCode=204;
+
     return res.end();
 
   }
@@ -215,10 +294,20 @@ export default async function handler(req,res){
 
 
 
-  if(!['GET','POST','DELETE','HEAD'].includes(req.method)){
 
-    res.statusCode = 405;
-    return res.end('Method Not Allowed');
+  if(
+    ![
+      'GET',
+      'POST',
+      'DELETE'
+    ].includes(req.method)
+  ){
+
+    res.statusCode=405;
+
+    return res.end(
+      'Method Not Allowed'
+    );
 
   }
 
@@ -226,16 +315,36 @@ export default async function handler(req,res){
 
 
 
-  const server = makeServer(req);
+
+  // MCP握手需要SSE
+
+  if(req.method==='GET'){
+
+    res.setHeader(
+      'Content-Type',
+      'text/event-stream'
+    );
+
+  }
+
+
+
+
+
+
+  const server =
+    makeServer(req);
+
 
 
 
   const transport =
     new StreamableHTTPServerTransport({
 
-      sessionIdGenerator:()=>crypto.randomUUID()
+      sessionIdGenerator:undefined
 
     });
+
 
 
 
@@ -243,13 +352,19 @@ export default async function handler(req,res){
   try{
 
 
-    await server.connect(transport);
+    await server.connect(
+      transport
+    );
 
 
     await transport.handleRequest(
+
       req,
+
       res,
+
       req.body
+
     );
 
 
@@ -260,9 +375,12 @@ export default async function handler(req,res){
     console.error(error);
 
 
+
     if(!res.headersSent){
 
-      res.statusCode = 500;
+
+      res.statusCode=500;
+
 
       res.setHeader(
         'Content-Type',
@@ -271,32 +389,20 @@ export default async function handler(req,res){
 
 
       res.end(
+
         JSON.stringify({
+
           error:'MCP request failed'
+
         })
+
       );
 
     }
 
 
-  }finally{
-
-
-    res.on(
-      'close',
-      ()=>{
-
-        transport.close()
-          .catch(()=>{});
-
-
-        server.close()
-          .catch(()=>{});
-
-      }
-    );
-
-
   }
+
+
 
 }
