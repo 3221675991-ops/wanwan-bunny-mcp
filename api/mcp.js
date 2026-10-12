@@ -27,65 +27,30 @@ const stickers = [
 ].map(([id,label],i)=>({
   id,
   label,
-  filename:`${String(i + 1).padStart(2,'0')}_${id}.png`
+  filename:`${String(i+1).padStart(2,'0')}_${id}.png`
 }));
 
 
-const stickerIds = stickers.map(
-  s => s.id
-);
+const ids =
+  stickers.map(s=>s.id);
 
 
 
 function choose(id){
 
   return stickers.find(
-    s => s.id === id
+    s=>s.id===id
   );
 
 }
 
 
 
-function getImageUrl(sticker){
+function imageUrl(sticker){
 
-  return (
-    `https://cdn.jsdelivr.net/gh/3221675991-ops/wanwan-bunny-mcp@main/public/stickers/${sticker.filename}`
-  );
+  return `https://cdn.jsdelivr.net/gh/3221675991-ops/wanwan-bunny-mcp@main/public/stickers/${sticker.filename}`;
 
 }
-
-
-
-function imageResult(sticker){
-
-  const url =
-    getImageUrl(sticker);
-
-
-  return {
-
-    content:[
-
-      {
-        type:'text',
-        text:`${sticker.label}兔兔`
-      },
-
-
-      {
-        type:'resource_link',
-        name:sticker.label,
-        uri:url,
-        mimeType:'image/png'
-      }
-
-    ]
-
-  };
-
-}
-
 
 
 
@@ -97,7 +62,7 @@ function makeServer(){
 
       name:'wanwan-bunny-stickers',
 
-      version:'5.0.0'
+      version:'1.0.0'
 
     });
 
@@ -107,7 +72,7 @@ function makeServer(){
 
     'list_stickers',
 
-    '列出晚晚和哥哥的兔兔表情包。',
+    '查看有哪些兔兔表情包',
 
     {},
 
@@ -138,16 +103,15 @@ function makeServer(){
 
 
 
-
   server.tool(
 
     'show_sticker',
 
-    '展示兔兔表情包。',
+    '发送一个兔兔表情包',
 
     {
 
-      id:z.enum(stickerIds)
+      id:z.enum(ids)
 
     },
 
@@ -159,72 +123,19 @@ function makeServer(){
         choose(id);
 
 
-      if(!sticker){
+      return {
 
-        throw new Error(
-          'Sticker not found'
-        );
+        content:[
 
-      }
+          {
+            type:'text',
+            text:
+            `${sticker.label}兔兔\n${imageUrl(sticker)}`
+          }
 
-
-      return imageResult(
-        sticker
-      );
-
-    }
-
-  );
-
-
-
-
-
-  server.tool(
-
-    'suggest_sticker',
-
-    '根据聊天情绪推荐兔兔表情包。',
-
-    {
-
-      mood:z.enum([
-
-        'affection',
-        'comfort',
-        'missing',
-        'sleep',
-        'morning',
-        'care',
-        'playful',
-        'sad'
-
-      ])
-
-    },
-
-
-    async({mood})=>{
-
-
-      const map={
-
-        affection:'mua',
-        comfort:'hug',
-        missing:'miss_you',
-        sleep:'good_night',
-        morning:'wake_up',
-        care:'take_care',
-        playful:'like_you',
-        sad:'comfort_me'
+        ]
 
       };
-
-
-      return imageResult(
-        choose(map[mood])
-      );
-
 
     }
 
@@ -240,48 +151,6 @@ function makeServer(){
 
 
 export default async function handler(req,res){
-
-
-  res.setHeader(
-    'Access-Control-Allow-Origin',
-    '*'
-  );
-
-
-  res.setHeader(
-    'Access-Control-Allow-Methods',
-    'GET, POST, DELETE, OPTIONS'
-  );
-
-
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version, Authorization'
-  );
-
-
-
-  if(req.method === 'OPTIONS'){
-
-    res.statusCode = 204;
-
-    return res.end();
-
-  }
-
-
-
-  if(!['GET','POST','DELETE'].includes(req.method)){
-
-    res.statusCode = 405;
-
-    return res.end(
-      'Method Not Allowed'
-    );
-
-  }
-
-
 
 
   const server =
@@ -301,7 +170,6 @@ export default async function handler(req,res){
   await server.connect(
     transport
   );
-
 
 
   await transport.handleRequest(
