@@ -31,7 +31,9 @@ const stickers = [
 }));
 
 
-const stickerIds = stickers.map(s=>s.id);
+const stickerIds = stickers.map(
+  s=>s.id
+);
 
 
 function choose(id){
@@ -71,7 +73,14 @@ function imageResult(sticker,req){
       {
         type:'text',
         text:
-        `${sticker.label}兔兔\n\n${imageUrl}`
+        `${sticker.label}兔兔`
+      },
+
+
+      {
+        type:'image',
+        data:imageUrl,
+        mimeType:'image/png'
       }
 
     ]
@@ -82,7 +91,6 @@ function imageResult(sticker,req){
 
 
 
-
 function makeServer(req){
 
   const server =
@@ -90,10 +98,9 @@ function makeServer(req){
 
       name:'wanwan-bunny-stickers',
 
-      version:'1.3.0'
+      version:'1.4.0'
 
     });
-
 
 
   server.tool(
@@ -135,12 +142,7 @@ function makeServer(req){
     })
 
   );
-
-
-
-
-
-  server.tool(
+    server.tool(
 
     'show_sticker',
 
@@ -184,7 +186,6 @@ function makeServer(req){
 
 
 
-
   server.tool(
 
     'suggest_sticker',
@@ -217,12 +218,19 @@ function makeServer(req){
       const map={
 
         affection:'mua',
+
         comfort:'hug',
+
         missing:'miss_you',
+
         sleep:'good_night',
+
         morning:'wake_up',
+
         care:'take_care',
+
         playful:'like_you',
+
         sad:'comfort_me'
 
       };
@@ -242,9 +250,11 @@ function makeServer(req){
   );
 
 
+
   return server;
 
 }
+
 
 
 
@@ -255,20 +265,29 @@ export default async function handler(req,res){
 
 
   res.setHeader(
+
     'Access-Control-Allow-Origin',
+
     '*'
+
   );
 
 
   res.setHeader(
+
     'Access-Control-Allow-Methods',
+
     'GET, POST, DELETE, OPTIONS'
+
   );
 
 
   res.setHeader(
+
     'Access-Control-Allow-Headers',
+
     'Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version, Authorization'
+
   );
 
 
@@ -284,12 +303,17 @@ export default async function handler(req,res){
 
 
 
+
   if(!['GET','POST','DELETE'].includes(req.method)){
+
 
     res.statusCode=405;
 
+
     return res.end(
+
       'Method Not Allowed'
+
     );
 
   }
@@ -297,8 +321,10 @@ export default async function handler(req,res){
 
 
 
+
   const server =
     makeServer(req);
+
 
 
 
@@ -311,12 +337,17 @@ export default async function handler(req,res){
 
 
 
+
+
   try{
 
 
     await server.connect(
+
       transport
+
     );
+
 
 
     await transport.handleRequest(
@@ -330,10 +361,12 @@ export default async function handler(req,res){
     );
 
 
+
   }catch(error){
 
 
     console.error(error);
+
 
 
     if(!res.headersSent){
@@ -343,9 +376,13 @@ export default async function handler(req,res){
 
 
       res.setHeader(
+
         'Content-Type',
+
         'application/json'
+
       );
+
 
 
       res.end(
