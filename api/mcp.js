@@ -71,15 +71,47 @@ async function getImageBase64(sticker){
 
 
 
-function makeServer(req){
+async function imageResult(sticker){
 
+  const base64 =
+    await getImageBase64(sticker);
+
+
+  return {
+
+    content:[
+
+      {
+        type:'image',
+        data:base64,
+        mimeType:'image/png'
+      },
+
+
+      {
+        type:'text',
+        text:
+        `${sticker.label}兔兔`
+      }
+
+    ]
+
+  };
+
+}
+
+
+
+
+
+function makeServer(){
 
   const server =
     new McpServer({
 
       name:'wanwan-bunny-stickers',
 
-      version:'2.0.0'
+      version:'3.0.0'
 
     });
 
@@ -89,7 +121,7 @@ function makeServer(req){
 
     'list_stickers',
 
-    '列出兔兔表情包',
+    '列出兔兔表情包。',
 
     {},
 
@@ -125,7 +157,7 @@ function makeServer(req){
 
     'show_sticker',
 
-    '展示兔兔表情包',
+    '展示兔兔表情包。',
 
     {
 
@@ -136,10 +168,8 @@ function makeServer(req){
 
     async({id})=>{
 
-
       const sticker =
         choose(id);
-
 
 
       if(!sticker){
@@ -151,49 +181,9 @@ function makeServer(req){
       }
 
 
-
-      const base64 =
-        await getImageBase64(
-          sticker
-        );
-
-
-
-      return {
-
-        content:[
-
-          {
-
-            type:'resource',
-
-            resource:{
-
-              uri:
-              `sticker://${sticker.id}`,
-
-              mimeType:
-              'image/png',
-
-              blob:
-              base64
-
-            }
-
-          },
-
-          {
-
-            type:'text',
-
-            text:
-            `${sticker.label}兔兔`
-
-          }
-
-        ]
-
-      };
+      return imageResult(
+        sticker
+      );
 
     }
 
@@ -202,10 +192,61 @@ function makeServer(req){
 
 
 
+
+  server.tool(
+
+    'suggest_sticker',
+
+    '根据情绪推荐兔兔表情包。',
+
+    {
+
+      mood:z.enum([
+
+        'affection',
+        'comfort',
+        'missing',
+        'sleep',
+        'morning',
+        'care',
+        'playful',
+        'sad'
+
+      ])
+
+    },
+
+
+    async({mood})=>{
+
+
+      const map={
+
+        affection:'mua',
+        comfort:'hug',
+        missing:'miss_you',
+        sleep:'good_night',
+        morning:'wake_up',
+        care:'take_care',
+        playful:'like_you',
+        sad:'comfort_me'
+
+      };
+
+
+      return imageResult(
+        choose(map[mood])
+      );
+
+
+    }
+
+  );
+
+
   return server;
 
 }
-
 
 
 
@@ -244,7 +285,7 @@ export default async function handler(req,res){
 
 
   const server =
-    makeServer(req);
+    makeServer();
 
 
 
