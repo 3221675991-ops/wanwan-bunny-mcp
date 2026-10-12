@@ -33,7 +33,10 @@ const stickers = [
 }));
 
 
-const stickerIds = stickers.map(s=>s.id);
+const stickerIds = stickers.map(
+  s=>s.id
+);
+
 
 
 function choose(id){
@@ -43,6 +46,7 @@ function choose(id){
   );
 
 }
+
 
 
 
@@ -59,32 +63,25 @@ async function imageResult(sticker, req){
   const bytes = await readFile(file);
 
 
-  const host =
-    process.env.VERCEL_PROJECT_PRODUCTION_URL ||
-    req.headers['x-forwarded-host'] ||
-    req.headers.host;
-
-
-  const imageUrl =
-    `https://${host}/stickers/${sticker.filename}`;
-
-
   return {
 
     content:[
 
       {
-        type:'text',
-        text:
-        `${sticker.label}兔兔\n${imageUrl}`
+        type:'image',
+
+        data:
+        bytes.toString('base64'),
+
+        mimeType:'image/png'
       },
 
 
       {
-        type:'image',
-        data:
-        bytes.toString('base64'),
-        mimeType:'image/png'
+        type:'text',
+
+        text:
+        `${sticker.label}兔兔`
       }
 
     ]
@@ -105,7 +102,7 @@ function makeServer(req){
 
       name:'wanwan-bunny-stickers',
 
-      version:'1.5.0'
+      version:'1.6.0'
 
     });
 
@@ -156,6 +153,7 @@ function makeServer(req){
 
 
 
+
   server.tool(
 
     'show_sticker',
@@ -165,6 +163,7 @@ function makeServer(req){
     {
 
       id:
+
       z.enum(stickerIds)
 
     },
@@ -187,9 +186,13 @@ function makeServer(req){
 
 
       return imageResult(
+
         sticker,
+
         req
+
       );
+
 
     }
 
@@ -232,12 +235,19 @@ function makeServer(req){
       const map={
 
         affection:'mua',
+
         comfort:'hug',
+
         missing:'miss_you',
+
         sleep:'good_night',
+
         morning:'wake_up',
+
         care:'take_care',
+
         playful:'like_you',
+
         sad:'comfort_me'
 
       };
@@ -251,6 +261,7 @@ function makeServer(req){
 
       );
 
+
     }
 
   );
@@ -259,6 +270,7 @@ function makeServer(req){
   return server;
 
 }
+
 
 
 
@@ -352,6 +364,7 @@ export default async function handler(req,res){
 
 
     if(!res.headersSent){
+
 
       res.statusCode=500;
 
