@@ -1,6 +1,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 
 
 const stickers = [
@@ -31,9 +33,7 @@ const stickers = [
 }));
 
 
-const stickerIds = stickers.map(
-  s=>s.id
-);
+const stickerIds = stickers.map(s=>s.id);
 
 
 function choose(id){
@@ -46,24 +46,27 @@ function choose(id){
 
 
 
-function getImageUrl(sticker,req){
+async function imageResult(sticker, req){
+
+  const file = path.join(
+    process.cwd(),
+    'public',
+    'stickers',
+    sticker.filename
+  );
+
+
+  const bytes = await readFile(file);
+
 
   const host =
-    process.env.VERCEL_URL ||
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ||
     req.headers['x-forwarded-host'] ||
     req.headers.host;
 
 
-  return `https://${host}/stickers/${sticker.filename}`;
-
-}
-
-
-
-function imageResult(sticker,req){
-
   const imageUrl =
-    getImageUrl(sticker,req);
+    `https://${host}/stickers/${sticker.filename}`;
 
 
   return {
@@ -73,13 +76,14 @@ function imageResult(sticker,req){
       {
         type:'text',
         text:
-        `${sticker.label}兔兔`
+        `${sticker.label}兔兔\n${imageUrl}`
       },
 
 
       {
         type:'image',
-        data:imageUrl,
+        data:
+        bytes.toString('base64'),
         mimeType:'image/png'
       }
 
@@ -91,16 +95,21 @@ function imageResult(sticker,req){
 
 
 
+
+
 function makeServer(req){
+
 
   const server =
     new McpServer({
 
       name:'wanwan-bunny-stickers',
 
-      version:'1.4.0'
+      version:'1.5.0'
 
     });
+
+
 
 
   server.tool(
@@ -142,7 +151,12 @@ function makeServer(req){
     })
 
   );
-    server.tool(
+
+
+
+
+
+  server.tool(
 
     'show_sticker',
 
@@ -177,10 +191,10 @@ function makeServer(req){
         req
       );
 
-
     }
 
   );
+
 
 
 
@@ -218,19 +232,12 @@ function makeServer(req){
       const map={
 
         affection:'mua',
-
         comfort:'hug',
-
         missing:'miss_you',
-
         sleep:'good_night',
-
         morning:'wake_up',
-
         care:'take_care',
-
         playful:'like_you',
-
         sad:'comfort_me'
 
       };
@@ -244,11 +251,9 @@ function makeServer(req){
 
       );
 
-
     }
 
   );
-
 
 
   return server;
@@ -260,34 +265,24 @@ function makeServer(req){
 
 
 
-
 export default async function handler(req,res){
 
 
   res.setHeader(
-
     'Access-Control-Allow-Origin',
-
     '*'
-
   );
 
 
   res.setHeader(
-
     'Access-Control-Allow-Methods',
-
     'GET, POST, DELETE, OPTIONS'
-
   );
 
 
   res.setHeader(
-
     'Access-Control-Allow-Headers',
-
     'Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version, Authorization'
-
   );
 
 
@@ -303,17 +298,12 @@ export default async function handler(req,res){
 
 
 
-
   if(!['GET','POST','DELETE'].includes(req.method)){
-
 
     res.statusCode=405;
 
-
     return res.end(
-
       'Method Not Allowed'
-
     );
 
   }
@@ -321,10 +311,8 @@ export default async function handler(req,res){
 
 
 
-
   const server =
     makeServer(req);
-
 
 
 
@@ -338,16 +326,12 @@ export default async function handler(req,res){
 
 
 
-
   try{
 
 
     await server.connect(
-
       transport
-
     );
-
 
 
     await transport.handleRequest(
@@ -361,28 +345,21 @@ export default async function handler(req,res){
     );
 
 
-
   }catch(error){
 
 
     console.error(error);
 
 
-
     if(!res.headersSent){
-
 
       res.statusCode=500;
 
 
       res.setHeader(
-
         'Content-Type',
-
         'application/json'
-
       );
-
 
 
       res.end(
