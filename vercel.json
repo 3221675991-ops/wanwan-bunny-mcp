@@ -1,15 +1,14 @@
 {
   "version": 2,
   "functions": {
-    "api/mcp.js": {
-      "maxDuration": 30,
-      "includeFiles": "public/stickers/**"
+    "mcp.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
     {
       "source": "/mcp",
-      "destination": "/api/mcp"
+      "destination": "/mcp.js"
     }
   ]
 }
