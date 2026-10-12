@@ -1,7 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
-import path from 'node:path';
 
 
 const stickers = [
@@ -36,9 +35,11 @@ const stickerIds = stickers.map(s=>s.id);
 
 
 function choose(id){
+
   return stickers.find(
     s=>s.id===id
   );
+
 }
 
 
@@ -57,7 +58,6 @@ function getImageUrl(sticker,req){
 
 
 
-
 function imageResult(sticker,req){
 
   const imageUrl =
@@ -71,17 +71,7 @@ function imageResult(sticker,req){
       {
         type:'text',
         text:
-        `${sticker.label}兔兔`
-      },
-
-
-      {
-        type:'image_url',
-
-        image_url:{
-          url:imageUrl
-        }
-
+        `${sticker.label}兔兔\n\n${imageUrl}`
       }
 
     ]
@@ -95,13 +85,12 @@ function imageResult(sticker,req){
 
 function makeServer(req){
 
-
   const server =
     new McpServer({
 
       name:'wanwan-bunny-stickers',
 
-      version:'1.2.0'
+      version:'1.3.0'
 
     });
 
@@ -151,7 +140,6 @@ function makeServer(req){
 
 
 
-
   server.tool(
 
     'show_sticker',
@@ -167,6 +155,7 @@ function makeServer(req){
 
 
     async({id})=>{
+
 
       const sticker =
       choose(id);
@@ -186,10 +175,10 @@ function makeServer(req){
         req
       );
 
+
     }
 
   );
-
 
 
 
@@ -247,6 +236,7 @@ function makeServer(req){
 
       );
 
+
     }
 
   );
@@ -265,29 +255,20 @@ export default async function handler(req,res){
 
 
   res.setHeader(
-
     'Access-Control-Allow-Origin',
-
     '*'
-
   );
 
 
   res.setHeader(
-
     'Access-Control-Allow-Methods',
-
     'GET, POST, DELETE, OPTIONS'
-
   );
 
 
   res.setHeader(
-
     'Access-Control-Allow-Headers',
-
     'Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version, Authorization'
-
   );
 
 
@@ -357,15 +338,13 @@ export default async function handler(req,res){
 
     if(!res.headersSent){
 
+
       res.statusCode=500;
 
 
       res.setHeader(
-
         'Content-Type',
-
         'application/json'
-
       );
 
 
