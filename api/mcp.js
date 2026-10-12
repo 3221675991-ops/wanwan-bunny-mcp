@@ -1,8 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 
 
 const stickers = [
@@ -38,6 +36,7 @@ const stickerIds = stickers.map(
 );
 
 
+
 function choose(id){
 
   return stickers.find(
@@ -48,27 +47,32 @@ function choose(id){
 
 
 
-async function imageResult(sticker, req){
-
-  const file = path.join(
-    process.cwd(),
-    'public',
-    'stickers',
-    sticker.filename
-  );
-
-
-  const bytes = await readFile(file);
-
+function getImageUrl(sticker, req){
 
   const host =
     process.env.VERCEL_PROJECT_PRODUCTION_URL ||
+    process.env.VERCEL_URL ||
     req.headers['x-forwarded-host'] ||
     req.headers.host;
 
 
+  const protocol =
+    host.includes('localhost')
+      ? 'http'
+      : 'https';
+
+
+  return `${protocol}://${host}/stickers/${sticker.filename}`;
+
+}
+
+
+
+
+function imageResult(sticker, req){
+
   const imageUrl =
-    `https://${host}/stickers/${sticker.filename}`;
+    getImageUrl(sticker, req);
 
 
   return {
@@ -76,16 +80,14 @@ async function imageResult(sticker, req){
     content:[
 
       {
-        type:'image',
-        data:bytes.toString('base64'),
-        mimeType:'image/png'
+        type:'text',
+        text:`${sticker.label}兔兔`
       },
 
 
       {
-        type:'text',
-        text:
-        `${sticker.label}兔兔\n${imageUrl}`
+        type:'image',
+        url:imageUrl
       }
 
     ]
@@ -100,14 +102,17 @@ async function imageResult(sticker, req){
 
 function makeServer(req){
 
+
   const server =
     new McpServer({
 
       name:'wanwan-bunny-stickers',
 
-      version:'1.7.0'
+      version:'1.8.0'
 
     });
+
+
 
 
 
@@ -119,22 +124,30 @@ function makeServer(req){
 
     {},
 
+
     async()=>({
 
       content:[
 
         {
+
           type:'text',
+
           text:JSON.stringify(
+
             stickers.map(
               ({id,label})=>({
                 id,
                 label
               })
             ),
+
             null,
+
             2
+
           )
+
         }
 
       ]
@@ -147,6 +160,8 @@ function makeServer(req){
 
 
 
+
+
   server.tool(
 
     'show_sticker',
@@ -154,14 +169,18 @@ function makeServer(req){
     '展示兔兔表情包。',
 
     {
+
       id:z.enum(stickerIds)
+
     },
 
 
     async({id})=>{
 
+
       const sticker =
         choose(id);
+
 
 
       if(!sticker){
@@ -173,14 +192,19 @@ function makeServer(req){
       }
 
 
+
       return imageResult(
         sticker,
         req
       );
 
+
     }
 
   );
+
+
+
 
 
 
@@ -215,26 +239,41 @@ function makeServer(req){
 
       const map = {
 
+
         affection:'mua',
+
         comfort:'hug',
+
         missing:'miss_you',
+
         sleep:'good_night',
+
         morning:'wake_up',
+
         care:'take_care',
+
         playful:'like_you',
+
         sad:'comfort_me'
+
 
       };
 
 
+
       return imageResult(
+
         choose(map[mood]),
+
         req
+
       );
+
 
     }
 
   );
+
 
 
   return server;
@@ -246,7 +285,9 @@ function makeServer(req){
 
 
 
+
 export default async function handler(req,res){
+
 
 
   res.setHeader(
@@ -255,16 +296,19 @@ export default async function handler(req,res){
   );
 
 
+
   res.setHeader(
     'Access-Control-Allow-Methods',
     'GET, POST, DELETE, OPTIONS'
   );
 
 
+
   res.setHeader(
     'Access-Control-Allow-Headers',
     'Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version, Authorization'
   );
+
 
 
 
@@ -279,21 +323,27 @@ export default async function handler(req,res){
 
 
 
+
   if(!['GET','POST','DELETE'].includes(req.method)){
 
+
     res.statusCode = 405;
+
 
     return res.end(
       'Method Not Allowed'
     );
+
 
   }
 
 
 
 
+
   const server =
     makeServer(req);
+
 
 
 
@@ -307,6 +357,7 @@ export default async function handler(req,res){
 
 
 
+
   try{
 
 
@@ -315,11 +366,17 @@ export default async function handler(req,res){
     );
 
 
+
     await transport.handleRequest(
+
       req,
+
       res,
+
       req.body
+
     );
+
 
 
   }catch(error){
@@ -328,15 +385,22 @@ export default async function handler(req,res){
     console.error(error);
 
 
+
     if(!res.headersSent){
+
 
       res.statusCode = 500;
 
 
+
       res.setHeader(
+
         'Content-Type',
+
         'application/json'
+
       );
+
 
 
       res.end(
@@ -349,8 +413,11 @@ export default async function handler(req,res){
 
       );
 
+
     }
 
+
   }
+
 
 }
